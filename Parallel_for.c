@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <omp.h>
 #include "timer.h"
 
 int main()
@@ -41,6 +42,8 @@ int main()
 
     //perform calculation
     GET_TIME(start_time);
+
+    #pragma omp parallel for
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < n; j++)
