@@ -4,6 +4,8 @@
 #include <math.h>
 #include <omp.h>
 #include "timer.h"
+#include "stat.h"
+
 
 int main()
 {
@@ -40,25 +42,69 @@ int main()
         }
     }
 
-    //perform calculation
-    GET_TIME(start_time);
+    //Let's find required number of samples
 
-    #pragma omp parallel for
-    for (int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
+    double sample_mean;
+    double sample_std;
+    double samples[10];
+    double total_elapsed;
+
+    for (int i=0; i<10; i++){
+        GET_TIME(start_time);
+
+        #pragma omp parallel for
+        for (int i = 0; i < n; i++)
         {
-            for (int k = 0; k < n; k++)
+            #pragma omp parallel for
+            for (int j = 0; j < n; j++)
             {
-                product[i][j] += matA[i][k] * matB[k][j];
+                for (int k = 0; k < n; k++)
+                {
+                    product[i][j] += matA[i][k] * matB[k][j];
+                }
             }
         }
+        GET_TIME(end_time);
+
+        total_elapsed = end_time - start_time;
+        samples[i] = total_elapsed;
+
     }
-    GET_TIME(end_time);
+    sample_mean = mean(samples, 10);
+    sample_std = calculateSD(samples,10,sample_mean);
 
-    double total_elapsed = end_time - start_time;
+    int num_samples = (int) pow(( (100.0*1.960*sample_std) / (5.0*sample_mean)),2) + 1 ;
 
-    printf("\nTime elapsed: %f\n", total_elapsed);
+    
+    //perform actual calculation of time, at +-5% accuracy and 95% confidence
+    double actual_samples[num_samples];
+
+    for (int i=0; i<num_samples; i++){
+        GET_TIME(start_time);
+
+        #pragma omp parallel for
+        for (int i = 0; i < n; i++)
+        {
+            #pragma omp parallel for
+            for (int j = 0; j < n; j++)
+            {
+                for (int k = 0; k < n; k++)
+                {
+                    product[i][j] += matA[i][k] * matB[k][j];
+                }
+            }
+        }
+        GET_TIME(end_time);
+
+        total_elapsed = end_time - start_time;
+        actual_samples[i] = total_elapsed;
+
+    }
+
+    
+    printf("\nTotal samples required : %i\n", num_samples);
+    printf("Time elapsed average: %f\n", mean(actual_samples,num_samples));
+    
 
     //free allocated memory
     for (int i = 0; i < n; i++)
@@ -71,3 +117,4 @@ int main()
         free(currentIntPtr3);
     }
 }
+

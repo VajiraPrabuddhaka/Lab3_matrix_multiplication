@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <omp.h>
 #include "timer.h"
 #include "stat.h"
+
 
 int main()
 {
@@ -40,7 +42,6 @@ int main()
         }
     }
 
-
     //Let's find required number of samples
 
     double sample_mean;
@@ -49,43 +50,30 @@ int main()
     double total_elapsed;
 
     for (int i=0; i<10; i++){
-
         GET_TIME(start_time);
-        for (int i = 0; i < n; i++){
-            for (int j = 0; j < n; j++)
-            {
-                for (int k = 0; k < n; k++)
-                {
-                    product[i][j] += matA[i][k] * matB[k][j];
-                }
-            }
-        }
+
+        //need to have optimized algorithm here
         GET_TIME(end_time);
 
         total_elapsed = end_time - start_time;
         samples[i] = total_elapsed;
 
     }
-
     sample_mean = mean(samples, 10);
     sample_std = calculateSD(samples,10,sample_mean);
 
     int num_samples = (int) pow(( (100.0*1.960*sample_std) / (5.0*sample_mean)),2) + 1 ;
 
+    
     //perform actual calculation of time, at +-5% accuracy and 95% confidence
     double actual_samples[num_samples];
 
     for (int i=0; i<num_samples; i++){
         GET_TIME(start_time);
-        for (int i = 0; i < n; i++){
-            for (int j = 0; j < n; j++)
-            {
-                for (int k = 0; k < n; k++)
-                {
-                    product[i][j] += matA[i][k] * matB[k][j];
-                }
-            }
-        }
+
+        
+        //optimized one
+        
         GET_TIME(end_time);
 
         total_elapsed = end_time - start_time;
@@ -96,6 +84,7 @@ int main()
     
     printf("\nTotal samples required : %i\n", num_samples);
     printf("Time elapsed average: %f\n", mean(actual_samples,num_samples));
+    
 
     //free allocated memory
     for (int i = 0; i < n; i++)
@@ -108,3 +97,4 @@ int main()
         free(currentIntPtr3);
     }
 }
+
