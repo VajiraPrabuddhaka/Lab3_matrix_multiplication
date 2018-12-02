@@ -12,22 +12,26 @@ int main()
 
     int n;
     double start_time, end_time;
+    int m = 10;
     printf("Enter n:");
     scanf("%d", &n);
 
     double **matA;
     double **matB;
     double **product;
+    double **transpose;
 
     //allocate memory to matrices
     matA = (double **)malloc(sizeof(double *) * n);
     matB = (double **)malloc(sizeof(double *) * n);
     product = (double **)malloc(sizeof(double *) * n);
+    transpose = (double **)malloc(sizeof(double *) * n);
     for (int i = 0; i < n; i++)
     {
         matA[i] = (double *)malloc(sizeof(double) * n);
         matB[i] = (double *)malloc(sizeof(double) * n);
         product[i] = (double *)malloc(sizeof(double) * n);
+        transpose[i] = (double *)malloc(sizeof(double) * n);
     }
 
     //fill with random values
@@ -42,6 +46,15 @@ int main()
         }
     }
 
+    //make transpose
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            transpose[i][j] = matB[j][i];
+        }
+    }
+
     //Let's find required number of samples
 
     double sample_mean;
@@ -51,6 +64,21 @@ int main()
 
     for (int i=0; i<10; i++){
         GET_TIME(start_time);
+
+        #pragma omp parallel for  
+        for(int p = 0; p < n; p+=m){
+            for(int q = 0; q < n; q+=m){
+                for(int i=0;i<n;i++){
+                    for(int j = q ; j<q+m ;j++){  
+                       double temp = 0; 
+                       for (int k =p; k <p+m; k++) {
+                         temp += matA[i][k] * transpose[j][k];;
+                       }
+                       product[i][j] = temp;
+                    }
+                }
+            }
+        }
 
         //need to have optimized algorithm here
         GET_TIME(end_time);
@@ -71,8 +99,20 @@ int main()
     for (int i=0; i<num_samples; i++){
         GET_TIME(start_time);
 
-        
-        //optimized one
+        #pragma omp parallel for  
+        for(int p = 0; p < n; p+=m){
+            for(int q = 0; q < n; q+=m){
+                for(int i=0;i<n;i++){
+                    for(int j = q ; j<q+m ;j++){  
+                       double temp = 0; 
+                       for (int k =p; k <p+m; k++) {
+                         temp += matA[i][k] * transpose[j][k];;
+                       }
+                       product[i][j] = temp;
+                    }
+                }
+            }
+        }
         
         GET_TIME(end_time);
 
